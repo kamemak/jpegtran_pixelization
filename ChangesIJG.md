@@ -15,20 +15,20 @@ The following files are removed.
 image reader,image writer, DCT, iDCT, command line interface...
 
 ### Remove unused functions
-Modified [`jmorecfg.h`](app/src/main/cpp/jmorecfg.h) for removing unused functions.
+Modified [`jmorecfg.h`](jmorecfg.h) for removing unused functions.
 Some '#define' are commented out.
 
 ## Add extension functions
 ### Pixelization(block)
 The function make 8x8 pixelization.
-The function is implemented to do_pixelize() function in [`transupp.c`](app/src/main/cpp/transupp.c).
+The function is implemented to do_pixelize() function in [`transupp.c`](transupp.c).
 The function is based on do_wipe() function.
 do_wipe() clears all DCT coefficent to fill block with gray color.
 do_pixelize() clears AC coefficients only, this causes 8x8 pixlization.
 
 ### Pixelization(MCU)
 The function make pixelization in MCU unit.
-The function is implemented to do_pixelize2() function in [`transupp.c`](app/src/main/cpp/transupp.c).
+The function is implemented to do_pixelize2() function in [`transupp.c`](transupp.c).
 The function is based on do_pixelize(), block pixelization function.
 do_pixelize() clears AC coefficients in a block.
 In addition to that, do_pixelize2() average DC coefficinet in MCU.
