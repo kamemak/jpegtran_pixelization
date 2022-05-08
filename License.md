@@ -2,11 +2,11 @@
 This sample contains the following two parts and license terms are provided separately.
 - IJG code
 - Another part  
-Codes for Android and modified parts of IJG
+Modified parts of IJG
 
 ## IJG code  
 License terms can be found in the "LEGAL ISSUES" section of the following file. 
-[`app/src/main/cpp/README`](app/src/main/cpp/README)
+[`README`](README)
 
 ## Another part  
 MIT License
