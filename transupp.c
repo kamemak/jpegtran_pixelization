@@ -338,27 +338,9 @@ do_pixelize2 (j_decompress_ptr srcinfo, j_compress_ptr dstinfo,
   JBLOCKARRAY buffer;
   jpeg_component_info *compptr;
 
-  /* Calculate MCU size */
   int mcu_ratio_x, mcu_ratio_y;
   int mcu_blk_x,mcu_blk_y;
-#if 0
-  int mcu_width=0,mcu_height=0;
-  for (ci = 0; ci < dstinfo->num_components; ci++) {
-    compptr = dstinfo->comp_info + ci;
-    if( mcu_height < compptr->v_samp_factor ){
-      mcu_height = compptr->v_samp_factor;
-    }
-    if( mcu_width < compptr->h_samp_factor ){
-      mcu_width = compptr->h_samp_factor;
-    }
-  }
-  if( mcu_width > 2 || mcu_height > 2 || dstinfo->num_components > 4 ){
-    /* Not supported  */
-    return;  
-  }
-  //mcu_ratio_x = pix_blk_ratio_x/mcu_width;
-  //mcu_ratio_y = pix_blk_ratio_y/mcu_height;
-#endif
+
   mcu_ratio_x = pix_blk_ratio_x;
   mcu_ratio_y = pix_blk_ratio_y;
 
@@ -368,91 +350,7 @@ do_pixelize2 (j_decompress_ptr srcinfo, j_compress_ptr dstinfo,
     wipe_width = drop_width * compptr->h_samp_factor;
     y_wipe_blocks = y_crop_offset * compptr->v_samp_factor;
     wipe_bottom = drop_height * compptr->v_samp_factor + y_wipe_blocks;
-#if 0
-    for (; y_wipe_blocks < wipe_bottom;
-	 y_wipe_blocks += compptr->v_samp_factor) {
-      buffer = (*srcinfo->mem->access_virt_barray)
-	((j_common_ptr) srcinfo, src_coef_arrays[ci], y_wipe_blocks,
-	 (JDIMENSION) compptr->v_samp_factor, TRUE);
-      for (offset_y = 0; offset_y < compptr->v_samp_factor; offset_y++) {
-        for (offset_x = x_wipe_blocks; offset_x < x_wipe_blocks+wipe_width; offset_x++) {
-          JCOEF *blktop = buffer[offset_y][offset_x];
-          FMEMZERO(blktop+1, (DCTSIZE2-1) * SIZEOF(JCOEF));
-        }
-      }
-    }
-#elif 0
-    JDIMENSION wipe_height = drop_height * compptr->v_samp_factor;
-    buffer = (*srcinfo->mem->access_virt_barray)
-	((j_common_ptr) srcinfo, src_coef_arrays[ci], y_wipe_blocks,
-	 (JDIMENSION) compptr->v_samp_factor, TRUE);
-      for (offset_y = 0; offset_y < wipe_height; offset_y++) {
-        for (offset_x = x_wipe_blocks; offset_x < x_wipe_blocks+wipe_width; offset_x++) {
-          JCOEF *blktop = buffer[offset_y][offset_x];
-          FMEMZERO(blktop+1, (DCTSIZE2-1) * SIZEOF(JCOEF));
-        }
-      }
-#elif 0
-    mcu_blk_x = compptr->h_samp_factor * mcu_ratio_x; 
-    mcu_blk_y = compptr->v_samp_factor * mcu_ratio_y; 
-    JDIMENSION wipe_height = drop_height * compptr->v_samp_factor;
-    buffer = (*srcinfo->mem->access_virt_barray)
-	((j_common_ptr) srcinfo, src_coef_arrays[ci], y_wipe_blocks,
-	 (JDIMENSION) compptr->v_samp_factor, TRUE);
-    for (offset_y = 0; offset_y < wipe_height; offset_y++) {
-      for (offset_x = x_wipe_blocks; offset_x < x_wipe_blocks+wipe_width; offset_x++) {
-        JCOEF *blktop = buffer[offset_y][offset_x];
-        FMEMZERO(blktop+1, (DCTSIZE2-1) * SIZEOF(JCOEF));
-      }
-    }
-    for (offset_y = 0; offset_y < wipe_height; offset_y+=mcu_blk_y) {
-      for (offset_x = x_wipe_blocks; offset_x < x_wipe_blocks+wipe_width; offset_x+=mcu_blk_x) {
-	int ave=0,num=0;
-	for( int local_y = 0 ; local_y<mcu_blk_y && offset_y+local_y < wipe_height ; local_y++ ){
-	  for( int local_x = 0 ; local_x<mcu_blk_x && offset_x+local_x < x_wipe_blocks+wipe_width ; local_x++ ){
-	    ave += buffer[offset_y+local_y][offset_x+local_x][0];
-	    num++;
-	  }
-	}
-	ave /= num;
-	for( int local_y = 0 ; local_y<mcu_blk_y && offset_y+local_y < wipe_height ; local_y++ ){
-	  for( int local_x = 0 ; local_x<mcu_blk_x && offset_x+local_x < x_wipe_blocks+wipe_width ; local_x++ ){
-	    buffer[offset_y+local_y][offset_x+local_x][0] = ave;
-	  }
-	}
-      }
-    }
-#elif 0
-    mcu_blk_x = compptr->h_samp_factor * mcu_ratio_x; 
-    mcu_blk_y = compptr->v_samp_factor * mcu_ratio_y; 
-    JDIMENSION wipe_height = drop_height * compptr->v_samp_factor;
 
-    for (offset_y = 0; offset_y < wipe_height; offset_y+=mcu_blk_y) {
-      for (offset_x = x_wipe_blocks; offset_x < x_wipe_blocks+wipe_width; offset_x+=mcu_blk_x) {
-	int ave=0,num=0;
-	for( int local_y = 0 ; local_y<mcu_blk_y && offset_y+local_y < wipe_height ; local_y++ ){
-	  buffer = (*srcinfo->mem->access_virt_barray)
-	    ((j_common_ptr) srcinfo, src_coef_arrays[ci], y_wipe_blocks+offset_y+local_y,
-	    (JDIMENSION) 1, TRUE);
-	  for( int local_x = 0 ; local_x<mcu_blk_x && offset_x+local_x < x_wipe_blocks+wipe_width ; local_x++ ){
-            JCOEF *blktop = buffer[0][offset_x+local_x];
-	    ave += blktop[0];
-	    num++;
-            FMEMZERO(blktop+1, (DCTSIZE2-1) * SIZEOF(JCOEF));
-	  }
-	}
-	ave /= num;
-	for( int local_y = 0 ; local_y<mcu_blk_y && offset_y+local_y < wipe_height ; local_y++ ){
-	  buffer = (*srcinfo->mem->access_virt_barray)
-	    ((j_common_ptr) srcinfo, src_coef_arrays[ci], y_wipe_blocks+offset_y+local_y,
-	    (JDIMENSION) 1, TRUE);
-	  for( int local_x = 0 ; local_x<mcu_blk_x && offset_x+local_x < x_wipe_blocks+wipe_width ; local_x++ ){
-	    buffer[0][offset_x+local_x][0] = ave;
-	  }
-	}
-      }
-    }
-#else
     mcu_blk_x = compptr->h_samp_factor * mcu_ratio_x; 
     mcu_blk_y = compptr->v_samp_factor * mcu_ratio_y; 
     JDIMENSION wipe_height = drop_height * compptr->v_samp_factor;
@@ -498,7 +396,6 @@ do_pixelize2 (j_decompress_ptr srcinfo, j_compress_ptr dstinfo,
       }
       start_y = 0;
     }
-#endif
   }
 }
 
