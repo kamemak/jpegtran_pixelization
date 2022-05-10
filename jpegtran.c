@@ -58,6 +58,9 @@ int monochrome;
 #define PIXELIZE_INFO_SIZE 8
 int pixelizenum;
 static jpeg_pixelize_info pixelizeinfo[PIXELIZE_INFO_SIZE]; /* pixelize infos */
+/* Added for displaying JPEG properties
+ */
+boolean dispinfo;
 
 LOCAL(void)
 usage (void)
@@ -103,6 +106,7 @@ usage (void)
   fprintf(stderr, "  -maxmemory N   Maximum memory to use (in kbytes)\n");
   fprintf(stderr, "  -outfile name  Specify name for output file\n");
   fprintf(stderr, "  -verbose  or  -debug   Emit debug output\n");
+  fprintf(stderr, "  -info          Display JPEG properties (No operation)\n");
 #ifdef C_MULTISCAN_FILES_SUPPORTED
   fprintf(stderr, "Switches for wizards:\n");
   fprintf(stderr, "  -scans file    Create multi-scan JPEG per script file\n");
@@ -387,7 +391,7 @@ parse_switches (j_compress_ptr cinfo, int argc, char **argv,
       }
 #endif
     } else if (keymatch(arg, "monochrome", 4)) {
-        /* Trim off any partial edge MCUs that the transform can't handle. */
+      /* Fill AC coefficients of component 1~3 with zeros */
       monochrome = 1;
     } else if (keymatch(arg, "rmorientation", 3)) {
       /* Remove orientation information */
@@ -409,6 +413,9 @@ parse_switches (j_compress_ptr cinfo, int argc, char **argv,
 	usage();
       argn += 4;
       coeff_adj = 1;
+    } else if (keymatch(arg, "info", 3)) {
+      /* Display JPEG Properties */
+      dispinfo = TRUE;
     } else {
       usage();			/* bogus switch */
     }
@@ -502,6 +509,41 @@ void brightnessControl(
   return;
 }
 
+char colorspacestr[][10]={
+  "Unknown",
+  "Grayscale",
+  "RGB",
+  "YCbCr",
+  "CMYK",
+  "YCbCrK",
+  "RGB",
+  "YCbCr"
+};
+
+/**
+ * Display JPEG Properties
+ * 
+ * Displayed information may be useful for extension functions.
+ *  Q is related to '-offset' option
+ *  MCU size is related to '-pixelizae' option
+ */
+void displayJPEGProperties(
+  j_decompress_ptr cinfo
+){
+  fprintf(stderr, "JPEG Properties\n");
+  fprintf(stderr, " Image width      : %d\n",cinfo->image_width);
+  fprintf(stderr, " Image height     : %d\n",cinfo->image_height);
+  fprintf(stderr, " MCU width        : %d\n",cinfo->max_h_samp_factor*DCTSIZE);
+  fprintf(stderr, " MCU height       : %d\n",cinfo->max_v_samp_factor*DCTSIZE);
+  J_COLOR_SPACE colorspace = cinfo->jpeg_color_space;
+  if (colorspace > JCS_BG_YCC) colorspace = JCS_UNKNOWN;
+  fprintf(stderr, " Color space      : %s\n",colorspacestr[colorspace]);
+  fprintf(stderr, " Component number : %d\n",cinfo->num_components);
+  for (int cnt=0;cnt<cinfo->num_components&&cnt<MAX_COMPS_IN_SCAN;cnt++) {
+    fprintf(stderr, " Q for DC[%d]      : %d\n",cnt,
+      cinfo->quant_tbl_ptrs[cinfo->comp_info[cnt].quant_tbl_no]->quantval[0]);
+  }
+}
 
 /*
  * The main program.
@@ -562,7 +604,7 @@ main (int argc, char **argv)
 #ifdef TWO_FILE_COMMANDLINE
   /* Must have either -outfile switch or explicit output file name */
   if (outfilename == NULL) {
-    if (file_index != argc-2) {
+    if (file_index != argc-2&&!dispinfo) {
       fprintf(stderr, "%s: must name one input and one output file\n",
 	      progname);
       usage();
@@ -606,6 +648,12 @@ main (int argc, char **argv)
 
   /* Read file header */
   (void) jpeg_read_header(&srcinfo, TRUE);
+
+  /* Display properties */
+  if (dispinfo) {
+    displayJPEGProperties(&srcinfo);
+    exit(EXIT_FAILURE);
+  }
 
   /* Adjust default decompression parameters */
   if (scaleoption != NULL)
