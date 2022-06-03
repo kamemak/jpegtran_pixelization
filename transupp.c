@@ -1536,11 +1536,6 @@ jtransform_prepare_pixelize (j_decompress_ptr srcinfo,
   //JDIMENSION width_in_blocks, height_in_blocks;
   //int ci, h_samp_factor, v_samp_factor;
 
-  /* Pixelization is exclusive of another transformation */
-  if (tinfo->crop || tinfo->transform != JXFORM_NONE) {
-    ERREXIT(srcinfo, JERR_BAD_CROP_SPEC);
-  }
-
   /* Compute output image dimensions and related values. */
   // jpeg_core_output_dimensions(srcinfo);
 

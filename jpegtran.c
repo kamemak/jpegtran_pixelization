@@ -737,17 +737,18 @@ main (int argc, char **argv)
   /* Copy to the output file any extra markers that we want to preserve */
   jcopy_markers_execute(&srcinfo, &dstinfo, copyoption);
 
+  for (int cnt=0;cnt<pixelizenum;cnt++) {
+    jtransform_execute_pixelize(&srcinfo, &dstinfo,
+				      src_coef_arrays,
+				      pixelizeinfo+cnt);
+  }
+
   /* Execute image transformation, if any */
 #if TRANSFORMS_SUPPORTED
   jtransform_execute_transformation(&srcinfo, &dstinfo,
 				    src_coef_arrays,
 				    &transformoption);
 #endif
-  for (int cnt=0;cnt<pixelizenum;cnt++) {
-    jtransform_execute_pixelize(&srcinfo, &dstinfo,
-				      src_coef_arrays,
-				      pixelizeinfo+cnt);
-  }
 
   /* Finish compression and release memory */
   jpeg_finish_compress(&dstinfo);
