@@ -690,6 +690,13 @@ main (int argc, char **argv)
     brightnessControl(&srcinfo,src_coef_arrays);
   }
 
+  for (int cnt=0;cnt<pixelizenum;cnt++) {
+    jtransform_execute_pixelize(&srcinfo,
+				      src_coef_arrays,
+				      pixelizeinfo+cnt);
+  }
+	
+	
   /* Initialize destination compression parameters from source values */
   jpeg_copy_critical_parameters(&srcinfo, &dstinfo);
 
@@ -737,11 +744,6 @@ main (int argc, char **argv)
   /* Copy to the output file any extra markers that we want to preserve */
   jcopy_markers_execute(&srcinfo, &dstinfo, copyoption);
 
-  for (int cnt=0;cnt<pixelizenum;cnt++) {
-    jtransform_execute_pixelize(&srcinfo, &dstinfo,
-				      src_coef_arrays,
-				      pixelizeinfo+cnt);
-  }
 
   /* Execute image transformation, if any */
 #if TRANSFORMS_SUPPORTED
